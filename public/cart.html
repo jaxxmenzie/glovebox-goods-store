@@ -1,0 +1,47 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cart · {store}</title><link rel="stylesheet" href="/styles.css"></head><body>
+<header class="site"></header>
+<main class="wrap"><h1 style="margin:28px 0 0">Your cart</h1><div id="cart"></div></main>
+<footer class="site"></footer>
+<script src="/app.js"></script>
+<script>
+Store.init().then(({ products, config }) => {
+  const el = document.getElementById('cart');
+  function render(msg) {
+    const lines = Store.getCart().map(i => ({ ...i, p: products.find(p => p.id === i.id) })).filter(l => l.p);
+    if (!lines.length) { el.innerHTML = '<div class="empty"><p>Your cart is empty.</p><a class="btn" href="/">Keep shopping</a></div>'; return; }
+    const sub = lines.reduce((s, l) => s + l.p.price * l.qty, 0);
+    const ship = sub >= config.freeShippingOver ? 0 : config.flatShipping;
+    el.innerHTML = `<div class="cart"><div>${lines.map(l => `
+      <div class="line"><img src="${l.p.image}" alt="">
+        <div><a href="/product?id=${l.p.id}"><strong>${Store.esc(l.p.name)}</strong></a><div class="note">${Store.money(l.p.price)} each</div>
+          <div class="ctrl"><button class="q" data-id="${l.p.id}" data-d="-1" aria-label="Decrease">−</button><span data-qty="${l.p.id}">${l.qty}</span>
+          <button class="q" data-id="${l.p.id}" data-d="1" aria-label="Increase">+</button><button class="rm" data-rm="${l.p.id}">Remove</button></div></div>
+        <strong>${Store.money(l.p.price * l.qty)}</strong></div>`).join('')}</div>
+      <aside class="summary"><div class="row"><span>Subtotal</span><span id="subtotal">${Store.money(sub)}</span></div>
+        <div class="row"><span>Shipping</span><span>${ship ? Store.money(ship) : 'Free'}</span></div>
+        ${ship ? `<div class="note">Add ${Store.money(config.freeShippingOver - sub)} more for free shipping</div>` : ''}
+        <div class="row total"><span>Total</span><span id="total">${Store.money(sub + ship)}</span></div>
+        <div class="note">Sales tax, if any, is calculated at checkout.</div>
+        <button class="btn" id="checkout" ${config.paymentsConfigured ? '' : 'disabled'}>Checkout</button>
+        ${config.paymentsConfigured ? '' : `<div class="notice warn" id="pay-off"><strong>Checkout is coming soon.</strong> We're finishing setting up secure payments — your cart is saved on this device, so check back shortly.</div>`}
+        ${msg ? `<div class="notice warn">${Store.esc(msg)}</div>` : ''}
+      </aside></div>`;
+  }
+  el.addEventListener('click', async e => {
+    const t = e.target;
+    if (t.dataset.d) { const c = Store.getCart().find(i => i.id === t.dataset.id); Store.setQty(t.dataset.id, c.qty + Number(t.dataset.d)); render(); }
+    if (t.dataset.rm) { Store.setQty(t.dataset.rm, 0); render(); }
+    if (t.id === 'checkout') {
+      t.disabled = true; t.textContent = 'Starting secure checkout…';
+      try {
+        const r = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: Store.getCart() }) });
+        const d = await r.json();
+        if (d.url) { location.href = d.url; return; }
+        render(d.message || 'Checkout is unavailable right now.');
+      } catch { render('Network error — please try again.'); }
+    }
+  });
+  render();
+});
+</script></body></html>

@@ -1,0 +1,22 @@
+{
+  "name": "car-store",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Small dropshipping storefront for car & truck accessories (Express + Stripe Checkout)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node scripts/smoke-test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.23.1",
+    "stripe": "^17.5.0"
+  },
+  "devDependencies": {
+    "pg-mem": "^3.0.14"
+  }
+}

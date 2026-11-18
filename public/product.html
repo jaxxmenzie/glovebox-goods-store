@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{store}</title><link rel="stylesheet" href="/styles.css"></head><body>
+<header class="site"></header>
+<main class="wrap"><div class="crumbs"><a href="/">Shop</a> / <span id="crumb"></span></div><div id="product"></div></main>
+<footer class="site"></footer>
+<script src="/app.js"></script>
+<script>
+Store.init().then(({ products }) => {
+  const id = new URLSearchParams(location.search).get('id');
+  const p = products.find(x => x.id === id), el = document.getElementById('product');
+  if (!p) { el.innerHTML = '<div class="empty"><h2>Product not found</h2><a class="btn" href="/">Back to shop</a></div>'; return; }
+  document.title = `${p.name} · ${Store.config.storeName}`;
+  document.getElementById('crumb').textContent = p.name;
+  el.innerHTML = `<div class="product">
+    <div class="media"><img src="${p.image}" alt="${Store.esc(p.name)}"></div>
+    <div><span class="note">${Store.esc(p.category)}</span><h1>${Store.esc(p.name)}</h1>
+      <div class="price">${Store.money(p.price)}</div><p>${Store.esc(p.blurb)}</p>
+      <ul>${p.bullets.map(b => `<li>${Store.esc(b)}</li>`).join('')}</ul>
+      <div class="qty"><label for="q">Qty</label><input id="q" type="number" min="1" max="10" value="1">
+        <button class="btn" id="add">Add to cart</button></div>
+      <p class="note">Ships in 3–10 business days. Free shipping on orders over ${Store.money(Store.config.freeShippingOver)}.</p>
+    </div></div>`;
+  document.getElementById('add').onclick = () => Store.add(p.id, Math.max(1, Math.min(10, parseInt(document.getElementById('q').value) || 1)));
+});
+</script></body></html>

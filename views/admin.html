@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orders · Admin</title><link rel="stylesheet" href="/styles.css">
+<style>table{width:100%;border-collapse:collapse;background:#fff;font-size:.9rem}td,th{border:1px solid var(--line);padding:8px;vertical-align:top;text-align:left}.pill{border-radius:999px;padding:2px 8px;font-size:.8rem;background:#fff4e6}.pill.fulfilled{background:#ebfbee}</style></head><body>
+<header class="site"><div class="wrap"><span class="logo">Orders to fulfill</span><a class="cart-link" href="/api/admin/orders.csv">Download CSV</a></div></header>
+<main class="wrap" style="padding:24px 18px 48px"><p class="note">Paid orders recorded by the Stripe webhook. For each one: place the same item with the supplier using the customer's shipping address, then paste the tracking number here.</p><div id="t"></div></main>
+<script>
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function load() {
+  const orders = await fetch('/api/admin/orders').then(r => r.json());
+  if (!orders.length) { document.getElementById('t').innerHTML = '<div class="empty">No paid orders yet.</div>'; return; }
+  document.getElementById('t').innerHTML = `<table><tr><th>Order</th><th>Ship to</th><th>Items → supplier</th><th>Paid / est. cost</th><th>Status</th></tr>${orders.map(o => {
+    const a = o.shippingAddress || {};
+    return `<tr><td>${esc(o.createdAt.slice(0,16).replace('T',' '))}<br><small>${esc(o.id)}</small></td>
+    <td>${esc(o.customer.name)}<br>${esc(a.line1)} ${esc(a.line2)}<br>${esc(a.city)}, ${esc(a.state)} ${esc(a.postal_code)}<br>${esc(o.customer.email)} ${esc(o.customer.phone)}</td>
+    <td>${o.items.map(i => `${i.qty} × ${esc(i.name)}${i.supplier ? `<br><small><a href="${esc(i.supplier.url)}" target="_blank" rel="noopener">${esc(i.supplier.platform)} · ${esc(i.supplier.name)}</a> ($${i.supplier.unitCost}/ea)</small>` : ''}`).join('<hr>')}</td>
+    <td>$${o.amountTotal.toFixed(2)}<br><small>supplier ≈ $${o.estSupplierCost.toFixed(2)} + shipping</small></td>
+    <td><span class="pill ${o.status === 'fulfilled' ? 'fulfilled' : ''}">${esc(o.status)}</span>${o.tracking ? `<br><small>${esc(o.tracking)}</small>` : ''}
+      ${o.status !== 'fulfilled' ? `<br><input placeholder="tracking #" id="tr-${esc(o.id)}" style="margin-top:6px;width:130px"> <button onclick="ful('${esc(o.id)}')">Mark fulfilled</button>` : ''}</td></tr>`; }).join('')}</table>`;
+}
+async function ful(id) {
+  await fetch(`/api/admin/orders/${encodeURIComponent(id)}/fulfill`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tracking: document.getElementById('tr-' + id).value }) });
+  load();
+}
+load();
+</script></body></html>

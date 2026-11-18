@@ -1,0 +1,33 @@
+# Render Blueprint — free-tier web service. Orders live in Neon Postgres (DATABASE_URL).
+# Secrets use sync:false so they're entered in the Render dashboard, never committed.
+services:
+  - type: web
+    name: car-store
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: STORE_NAME
+        value: Glovebox Goods
+      - key: BASE_URL            # e.g. https://car-store.onrender.com (set after first deploy)
+        sync: false
+      - key: DATABASE_URL        # Neon pooled connection string
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: FREE_SHIPPING_OVER
+        value: "35"
+      - key: FLAT_SHIPPING
+        value: "4.99"

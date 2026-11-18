@@ -1,0 +1,33 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{store} · Car & Truck Accessories</title><meta name="description" content="Practical car and truck accessories: organizers, phone mounts, detailing and winter gear. Free US shipping over $35.">
+<link rel="stylesheet" href="/styles.css"></head><body>
+<header class="site"></header><div class="banner"></div>
+<section class="hero"><div class="wrap">
+  <h1>Upgrades for the rig you drive every day.</h1>
+  <p>Organizers, mounts, detailing kits and winter gear that make your car or truck easier to live with. No tools, no fuss.</p>
+  <a class="btn" href="#shop">Shop accessories</a>
+  <div class="perks"><span>Ships across the US</span><span>Secure checkout by Stripe</span><span>Tracking sent by email</span></div>
+</div></section>
+<main class="wrap" id="shop">
+  <div class="filters" id="filters"></div>
+  <div class="grid" id="grid"></div>
+</main>
+<footer class="site"></footer>
+<script src="/app.js"></script>
+<script>
+Store.init().then(({ products }) => {
+  const cats = ['All', ...new Set(products.map(p => p.category))];
+  let active = 'All';
+  const f = document.getElementById('filters'), g = document.getElementById('grid');
+  function render() {
+    f.innerHTML = cats.map(c => `<button class="chip ${c === active ? 'active' : ''}" data-c="${Store.esc(c)}">${Store.esc(c)}</button>`).join('');
+    g.innerHTML = products.filter(p => active === 'All' || p.category === active).map(p => `
+      <a class="card" href="/product?id=${encodeURIComponent(p.id)}">
+        <div class="img"><img src="${p.image}" alt="${Store.esc(p.name)}" loading="lazy"></div>
+        <div class="body"><span class="cat">${Store.esc(p.category)}</span><h3>${Store.esc(p.name)}</h3><span class="price">${Store.money(p.price)}</span></div>
+      </a>`).join('');
+  }
+  f.addEventListener('click', e => { const c = e.target.dataset.c; if (c) { active = c; render(); } });
+  render();
+});
+</script></body></html>
