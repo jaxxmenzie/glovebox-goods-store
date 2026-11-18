@@ -19,6 +19,24 @@ function start(port, env) {
   for (const u of ['/', '/product?id=tire-gauge', '/cart', '/success', '/styles.css', '/app.js', '/img/tire-gauge.jpg']) {
     const r = await fetch(A + u); assert.equal(r.status, 200, u); console.log('200', u);
   }
+  // PWA routes
+  const man = await fetch(A + '/manifest.webmanifest');
+  assert.equal(man.status, 200); assert.match(man.headers.get('content-type'), /application\/manifest\+json/);
+  const mj = await man.json();
+  assert.equal(mj.display, 'standalone'); assert.equal(mj.start_url.split('?')[0], '/'); assert.equal(mj.scope, '/');
+  for (const need of ['192x192', '512x512']) assert.ok(mj.icons.some(i => i.sizes === need && i.purpose !== 'maskable'), 'icon ' + need);
+  assert.ok(mj.icons.some(i => i.sizes === '512x512' && i.purpose === 'maskable'), 'maskable 512');
+  for (const i of [...mj.icons, { src: '/icons/apple-touch-icon.png' }]) {
+    const r = await fetch(A + i.src); assert.equal(r.status, 200, i.src); assert.match(r.headers.get('content-type'), /image\/png/);
+  }
+  console.log('manifest OK (' + mj.icons.length + ' icons + apple-touch-icon load)');
+  const sw = await fetch(A + '/sw.js'); const swText = await sw.text();
+  assert.equal(sw.status, 200); assert.match(sw.headers.get('content-type'), /javascript/); assert.match(sw.headers.get('cache-control'), /no-cache/);
+  for (const p of ['admin', 'api\\/checkout', 'api\\/stripe']) assert.ok(swText.includes(p), 'sw bypasses ' + p);
+  assert.equal((await fetch(A + '/offline')).status, 200);
+  const home = await (await fetch(A + '/')).text();
+  for (const tag of ['rel="manifest"', 'apple-touch-icon', 'apple-mobile-web-app-capable', 'apple-mobile-web-app-status-bar-style', 'apple-mobile-web-app-title', 'name="theme-color"', 'viewport-fit=cover']) assert.ok(home.includes(tag), tag);
+  console.log('sw.js OK (no-cache, bypasses admin/checkout/stripe), /offline OK, PWA head tags present');
   const prods = await (await fetch(A + '/api/products')).json();
   assert.ok(prods.length >= 8); assert.ok(!('supplier' in prods[0]), 'supplier cost must not leak');
   console.log(`products: ${prods.length}, supplier fields hidden`);

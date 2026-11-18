@@ -26,3 +26,10 @@ Database: Neon free tier (project `glovebox-goods`). Every order also stays in t
 
 ## Products and images
 Catalog: `data/products.json`. Each item records the supplier, the supplier URL, the cost seen on the public supplier page (Nov 17, 2026), and `imageSource`. Images in `public/img/` are the supplier's listing photos from Spocket's CDN, which are meant for retailers who import the product. Re-confirm usage rights once the supplier account exists, or swap in that supplier's own images.
+
+## Home-screen app (PWA)
+- `public/manifest.webmanifest` (standalone, theme #1d232b), icons in `public/icons/` (regenerate: `python3 scripts/make-icons.py`).
+- `public/sw.js`: precaches the app shell; network-first for pages and `/api/*`; cache-first for images; `/offline` fallback.
+  Never touches `/admin`, `/api/admin`, `/api/checkout`, `/api/stripe/*`, `/healthz`. Bump `VERSION` in sw.js to force-refresh caches.
+- Mobile/standalone: bottom tab bar (Shop / Categories / Cart), safe-area padding, 16px inputs, install hint
+  (Android `beforeinstallprompt` button; one-time iOS Safari tip), shown on the home page only and never in standalone mode.
